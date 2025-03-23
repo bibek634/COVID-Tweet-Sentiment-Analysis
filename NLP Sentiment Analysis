@@ -1,0 +1,567 @@
+# Import data and define df
+
+from google.colab import files
+uploaded = files.upload()
+
+#B.1 Perform EDA to determine the number of tweets for each sentiment and location. Additionally,
+#visualize the distribution of each sentiment using Histograms or Bar charts.
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Specify the encoding when reading the CSV file
+df = pd.read_csv('Covid_train_data.csv', encoding='latin-1')
+
+#Number of tweets for each sentiment
+sentiment_counts = df['Sentiment'].value_counts()
+print(sentiment_counts)
+
+#Number of tweets for each location
+location_counts = df['Location'].value_counts()
+print(location_counts)
+
+#Sentiment and location combined
+sentiment_location_counts = df.groupby(['Sentiment', 'Location'])['OriginalTweet'].count().reset_index()
+print(sentiment_location_counts)
+
+#Histogram
+plt.hist(df['Sentiment'])
+plt.xlabel('Sentiment')
+plt.ylabel('Number of Tweets')
+plt.title('Distribution of Tweet Sentiments')
+plt.show()
+
+#Bar Chart
+sns.countplot(x='Sentiment', data=df)
+plt.xlabel('Sentiment')
+plt.ylabel('Number of Tweets')
+plt.title('Distribution of Tweet Sentiments')
+plt.show()
+
+#B.3 Preprocess the data to prepare it for vectorization. This involves tasks such as removing stop
+#words, lemmatizing, and tokenizing the text, etc.
+
+!pip install nltk
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt_tab')
+import pandas as pd
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud, STOPWORDS
+import seaborn as sns
+import re
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+
+# Specify the encoding when reading the CSV file
+df = pd.read_csv('Covid_train_data.csv', encoding='latin-1')
+
+def preprocess_text(text):
+    # Lowercase the text
+    text = text.lower()
+    # Remove URLs
+    text = re.sub(r'http\S+', '', text)
+    # Remove mentions and hashtags
+    text = re.sub(r'@[A-Za-z0-9_]+|#[A-Za-z0-9_]+', '', text)
+    # Remove punctuation
+    text = re.sub(r'[^\w\s]', '', text)
+    # Tokenize the text
+    tokens = word_tokenize(text)
+    # Remove stop words
+    stop_words = set(stopwords.words('english'))
+    tokens = [token for token in tokens if token not in stop_words]
+    # Lemmatize the tokens
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    # Join the tokens back into a string
+    preprocessed_text = ' '.join(tokens)
+    return preprocessed_text
+
+# Apply the preprocessing function to the 'OriginalTweet' column
+df['PreprocessedTweet'] = df['OriginalTweet'].apply(preprocess_text)
+
+#B.2 Generate word clouds for each sentiment.
+
+# Combine all preprocessed tweets for each sentiment
+sentiment_texts = df.groupby('Sentiment')['PreprocessedTweet'].apply(lambda x: ' '.join(x)).reset_index()
+
+# Create and display word clouds for each sentiment
+for index, row in sentiment_texts.iterrows():
+    sentiment = row['Sentiment']
+    text = row['PreprocessedTweet']  # Use the preprocessed text
+
+    # Create a WordCloud object
+    wordcloud = WordCloud(width=800, height=400, background_color='white', stopwords=STOPWORDS).generate(text)
+
+    # Display the word cloud
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.title(f'Word Cloud for {sentiment} Sentiment (Preprocessed)')
+    plt.show()
+#Vectorize the preprocessed data using the TF-IDF (Term Frequency-Inverse Document
+#Frequency) approach.
+
+!pip install scikit-learn
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt_tab')
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Specify the encoding when reading the CSV file
+df = pd.read_csv('Covid_train_data.csv', encoding='latin-1')
+
+def preprocess_text(text):
+    # Lowercase the text
+    text = text.lower()
+    # Remove URLs
+    text = re.sub(r'http\S+', '', text)
+    # Remove mentions and hashtags
+    text = re.sub(r'@[A-Za-z0-9_]+|#[A-Za-z0-9_]+', '', text)
+    # Remove punctuation
+    text = re.sub(r'[^\w\s]', '', text)
+    # Tokenize the text
+    tokens = word_tokenize(text)
+    # Remove stop words
+    stop_words = set(stopwords.words('english'))
+    tokens = [token for token in tokens if token not in stop_words]
+    # Lemmatize the tokens
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    # Join the tokens back into a string
+    preprocessed_text = ' '.join(tokens)
+    return preprocessed_text
+
+# Apply the preprocessing function to the 'OriginalTweet' column
+df['PreprocessedTweet'] = df['OriginalTweet'].apply(preprocess_text)
+
+# Create a TfidfVectorizer object
+vectorizer = TfidfVectorizer()
+
+# Fit the vectorizer to the preprocessed tweets
+vectorizer.fit(df['PreprocessedTweet'])
+
+# Transform the preprocessed tweets into a TF-IDF matrix
+tfidf_matrix = vectorizer.transform(df['PreprocessedTweet'])
+
+print(tfidf_matrix.shape)
+
+#B.5 Employ a traditional model (e.g., decision tree, SVM, Naïve Bayes) to predict the class of the test data.
+
+!pip install scikit-learn
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt_tab')
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+
+# Specify the encoding when reading the CSV file
+df = pd.read_csv('Covid_train_data.csv', encoding='latin-1')
+
+def preprocess_text(text):
+    # Lowercase the text
+    text = text.lower()
+    # Remove URLs
+    text = re.sub(r'http\S+', '', text)
+    # Remove mentions and hashtags
+    text = re.sub(r'@[A-Za-z0-9_]+|#[A-Za-z0-9_]+', '', text)
+    # Remove punctuation
+    text = re.sub(r'[^\w\s]', '', text)
+    # Tokenize the text
+    tokens = word_tokenize(text)
+    # Remove stop words
+    stop_words = set(stopwords.words('english'))
+    tokens = [token for token in tokens if token not in stop_words]
+    # Lemmatize the tokens
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    # Join the tokens back into a string
+    preprocessed_text = ' '.join(tokens)
+    return preprocessed_text
+
+# Apply the preprocessing function to the 'OriginalTweet' column
+df['PreprocessedTweet'] = df['OriginalTweet'].apply(preprocess_text)
+
+# Create a TfidfVectorizer object
+vectorizer = TfidfVectorizer()
+
+# Fit the vectorizer to the preprocessed tweets
+vectorizer.fit(df['PreprocessedTweet'])
+
+# Transform the preprocessed tweets into a TF-IDF matrix
+tfidf_matrix = vectorizer.transform(df['PreprocessedTweet'])
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(
+    tfidf_matrix, df['Sentiment'], test_size=0.2, random_state=42
+)
+
+# Create a DecisionTreeClassifier object
+classifier = DecisionTreeClassifier()
+
+# Train the classifier
+classifier.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = classifier.predict(X_test)
+
+# Evaluate the classifier
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy}")
+
+# Accuracy, Sensitivity, and Specificity of the TF-IDF model.
+
+from sklearn.metrics import confusion_matrix
+
+# Assuming y_test and y_pred are already defined from the previous code
+
+cm = confusion_matrix(y_test, y_pred)
+
+# Calculate TP, TN, FP, FN for each class
+# Assuming your classes are 'Extremely Negative', 'Negative', 'Neutral', 'Positive', 'Extremely Positive'
+# You'll need to adjust these labels if your classes are different
+
+classes = ['Extremely Negative', 'Negative', 'Neutral', 'Positive', 'Extremely Positive']
+sensitivity = {}
+specificity = {}
+
+for i, class_label in enumerate(classes):
+    TP = cm[i, i]
+    FP = cm[:, i].sum() - TP
+    FN = cm[i, :].sum() - TP
+    TN = cm.sum() - TP - FP - FN
+
+    sensitivity[class_label] = TP / (TP + FN) if (TP + FN) != 0 else 0
+    specificity[class_label] = TN / (TN + FP) if (TN + FP) != 0 else 0
+    print(f"Class: {class_label}")
+    print(f"Sensitivity: {sensitivity[class_label]}")
+    print(f"Specificity: {specificity[class_label]}")
+    print("---")
+
+#Overall Accuracy is already calculated in the previous code as 'accuracy'
+print(f"Overall Accuracy: {accuracy}")
+
+#B.6 Represent the data in vector space using the Word2Vec approach and build the model. Compare
+#the accuracy achieved with the TF-IDF approach.
+
+!pip install gensim scikit-learn nltk
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt_tab')
+import pandas as pd
+from gensim.models import Word2Vec
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+import re
+import numpy as np
+
+# Specify the encoding when reading the CSV file
+df = pd.read_csv('Covid_train_data.csv', encoding='latin-1')
+
+def preprocess_text(text):
+    # Lowercase the text
+    text = text.lower()
+    # Remove URLs
+    text = re.sub(r'http\S+', '', text)
+    # Remove mentions and hashtags
+    text = re.sub(r'@[A-Za-z0-9_]+|#[A-Za-z0-9_]+', '', text)
+    # Remove punctuation
+    text = re.sub(r'[^\w\s]', '', text)
+    # Tokenize the text
+    tokens = word_tokenize(text)
+    # Remove stop words
+    stop_words = set(stopwords.words('english'))
+    tokens = [token for token in tokens if token not in stop_words]
+    # Lemmatize the tokens
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    return tokens  # Return tokens instead of joining them
+
+# Apply preprocessing
+df['PreprocessedTokens'] = df['OriginalTweet'].apply(preprocess_text)
+
+# Train Word2Vec model
+model = Word2Vec(sentences=df['PreprocessedTokens'], vector_size=100, window=5, min_count=1, workers=4)
+
+# Function to get document vector by averaging word vectors
+def get_doc_vector(tokens):
+    vectors = [model.wv[token] for token in tokens if token in model.wv]
+    if vectors:
+        return np.mean(vectors, axis=0)
+    else:
+        return np.zeros(model.vector_size)
+
+# Get document vectors for all tweets
+df['DocVector'] = df['PreprocessedTokens'].apply(get_doc_vector)
+
+# Split data
+X = df['DocVector'].to_list()
+y = df['Sentiment']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train Decision Tree with Word2Vec features
+classifier_w2v = DecisionTreeClassifier()
+classifier_w2v.fit(X_train, y_train)
+
+# Predict and evaluate
+y_pred_w2v = classifier_w2v.predict(X_test)
+accuracy_w2v = accuracy_score(y_test, y_pred_w2v)
+print(f"Accuracy with Word2Vec: {accuracy_w2v}")
+
+
+# TF-IDF approach for comparison (same as before)
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+print(f"Accuracy with TF-IDF: {accuracy}")
+
+# Calculate the  Accuracy, Sensitivity, and Specificity for the Word2Vec model.
+
+# Assuming y_test and y_pred_w2v are already defined from the Word2Vec section
+from sklearn.metrics import confusion_matrix
+
+cm_w2v = confusion_matrix(y_test, y_pred_w2v)
+
+classes = ['Extremely Negative', 'Negative', 'Neutral', 'Positive', 'Extremely Positive']
+sensitivity_w2v = {}
+specificity_w2v = {}
+
+for i, class_label in enumerate(classes):
+    TP = cm_w2v[i, i]
+    FP = cm_w2v[:, i].sum() - TP
+    FN = cm_w2v[i, :].sum() - TP
+    TN = cm_w2v.sum() - TP - FP - FN
+
+    sensitivity_w2v[class_label] = TP / (TP + FN) if (TP + FN) != 0 else 0
+    specificity_w2v[class_label] = TN / (TN + FP) if (TN + FP) != 0 else 0
+    print(f"Word2Vec - Class: {class_label}")
+    print(f"Sensitivity: {sensitivity_w2v[class_label]}")
+    print(f"Specificity: {specificity_w2v[class_label]}")
+    print("---")
+
+print(f"Word2Vec - Overall Accuracy: {accuracy_w2v}")
+
+# B.7 Build a model using a pre-trained large language model for sentiment analysis task (e.g., BERT,
+#RoBerta, or other transformer architectures). Make sure you enable GPU if using Google Colab to
+#run the model. Provide your insights into this approach and advantages over the use of a
+#traditional model.
+
+#BERT
+!pip install transformers datasets
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from datasets import load_dataset, Dataset
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import numpy as np
+import pandas as pd
+import torch
+
+# Load the dataset using pandas first, specifying the correct encoding
+df = pd.read_csv('Covid_train_data.csv', encoding='latin-1')
+
+# Convert the pandas DataFrame to a Hugging Face Dataset
+dataset = Dataset.from_pandas(df)
+
+# Preprocess the data
+def preprocess_function(examples):
+    return tokenizer(examples['OriginalTweet'], padding="max_length", truncation=True)
+
+# Load pre-trained BERT tokenizer and model
+tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+model = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=5)
+
+# Apply preprocessing
+encoded_dataset = dataset.map(preprocess_function, batched=True)
+
+# Convert the Hugging Face Dataset to NumPy arrays for train_test_split
+# Get features and labels as NumPy arrays
+# Select the columns you need first
+features = encoded_dataset.select_columns(['input_ids', 'attention_mask'])
+
+# Convert to pandas DataFrame then NumPy
+features = np.array(features.to_pandas())
+
+labels = np.array(encoded_dataset['Sentiment'])
+
+# Split the data using train_test_split
+train_features, test_features, train_labels, test_labels = train_test_split(
+    features, labels, test_size=0.2, random_state=42
+)
+
+# Accessing input_ids and attention_mask from the NumPy array
+train_features = {'input_ids': train_features[:, 0].tolist(), 'attention_mask': train_features[:, 1].tolist()}
+test_features = {'input_ids': test_features[:, 0].tolist(), 'attention_mask': test_features[:, 1].tolist()}
+
+# Accuracy, Sensitivity, and Specificity of the pre-trained model
+from sklearn.metrics import confusion_matrix
+
+cm = confusion_matrix(y_test, y_pred)
+
+
+classes = ['Extremely Negative', 'Negative', 'Neutral', 'Positive', 'Extremely Positive']
+sensitivity = {}
+specificity = {}
+
+for i, class_label in enumerate(classes):
+    TP = cm[i, i]
+    FP = cm[:, i].sum() - TP
+    FN = cm[i, :].sum() - TP
+    TN = cm.sum() - TP - FP - FN
+
+    sensitivity[class_label] = TP / (TP + FN) if (TP + FN) != 0 else 0
+    specificity[class_label] = TN / (TN + FP) if (TN + FP) != 0 else 0
+    print(f"Class: {class_label}")
+    print(f"Sensitivity: {sensitivity[class_label]}")
+    print(f"Specificity: {specificity[class_label]}")
+    print("---")
+
+#Overall Accuracy is already calculated in the previous code as 'accuracy'
+print(f"Overall Accuracy: {accuracy}")
+
+# prompt: Plot ROC curves for the pre-trained model, Word2Vec, and TF-IDF models.
+
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc
+from sklearn.preprocessing import LabelBinarizer
+import torch
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer # Import TfidfVectorizer
+import pandas as pd # Import pandas
+import re #Import re
+from nltk.corpus import stopwords #Import stopwords
+from nltk.stem import WordNetLemmatizer #Import WordNetLemmatizer
+from nltk.tokenize import word_tokenize #Import word_tokenize
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt_tab')
+
+# Function to plot ROC curves
+
+def plot_roc_curves(y_true, y_scores_dict):
+    lb = LabelBinarizer()
+    lb.fit(y_true)
+    y_test_binarized = lb.transform(y_true)  # Binarize y_test for ROC curve
+
+    fpr_dict = {}
+    tpr_dict = {}
+    roc_auc_dict = {}
+
+    for label_name, y_scores in y_scores_dict.items():
+        # Ensure y_scores have the same number of samples as y_test
+        if y_scores.shape[0] != y_test_binarized.shape[0]:
+            # If not, adjust y_scores (example: using the first n predictions)
+            y_scores = y_scores[:y_test_binarized.shape[0]]
+
+        # Calculate ROC curve for each class if multi-class
+        if y_test_binarized.shape[1] > 1:
+            for i in range(y_test_binarized.shape[1]):
+                fpr, tpr, _ = roc_curve(y_test_binarized[:, i], y_scores[:, i])
+                fpr_dict[f"{label_name}_class_{i}"] = fpr
+                tpr_dict[f"{label_name}_class_{i}"] = tpr
+                roc_auc_dict[f"{label_name}_class_{i}"] = auc(fpr, tpr)
+        else:  # For binary classification
+            fpr, tpr, _ = roc_curve(y_test_binarized, y_scores)
+            fpr_dict[label_name] = fpr
+            tpr_dict[label_name] = tpr
+            roc_auc_dict[label_name] = auc(fpr, tpr)
+
+    # Plot ROC curves
+    plt.figure(figsize=(10, 8))
+    for label_name, fpr in fpr_dict.items():
+        plt.plot(fpr, tpr_dict[label_name], label=f'{label_name} (area = {roc_auc_dict[label_name]:0.2f})')
+
+    plt.plot([0, 1], [0, 1], 'k--')  # Random guess line
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curves for Different Models')
+    plt.legend(loc="lower right")
+    plt.show()
+
+# Assuming 'model' is your pre-trained BERT model
+# Wrap the inputs in a torch.Tensor and move them to the device
+# (You may need to change 'device' if you're not using CUDA)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model.to(device)  # Move the model to the appropriate device
+
+# Getting predictions for the pre-trained model in batches
+batch_size = 64  # Adjust this value as needed
+y_pred_proba_pretrained = []
+
+for i in range(0, len(test_features['input_ids']), batch_size):
+    # Get a batch of inputs
+    input_ids_batch = torch.tensor(test_features['input_ids'][i : i + batch_size]).to(device)
+    attention_mask_batch = torch.tensor(test_features['attention_mask'][i : i + batch_size]).to(device)
+
+    # Make predictions for the batch
+    with torch.no_grad():
+        outputs = model(input_ids=input_ids_batch, attention_mask=attention_mask_batch)
+
+    # Get predicted probabilities for the batch and append to the overall list
+    y_pred_proba_pretrained.extend(torch.softmax(outputs.logits, dim=1).cpu().numpy())
+
+# Convert the list of probabilities to a NumPy array
+y_pred_proba_pretrained = np.array(y_pred_proba_pretrained)
+
+# Reload the dataframe and preprocess it to create 'PreprocessedTweet' column
+df = pd.read_csv('Covid_train_data.csv', encoding='latin-1')
+
+def preprocess_text(text):
+    # Lowercase the text
+    text = text.lower()
+    # Remove URLs
+    text = re.sub(r'http\S+', '', text)
+    # Remove mentions and hashtags
+    text = re.sub(r'@[A-Za-z0-9_]+|#[A-Za-z0-9_]+', '', text)
+    # Remove punctuation
+    text = re.sub(r'[^\w\s]', '', text)
+    # Tokenize the text
+    tokens = word_tokenize(text)
+    # Remove stop words
+    stop_words = set(stopwords.words('english'))
+    tokens = [token for token in tokens if token not in stop_words]
+    # Lemmatize the tokens
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    # Join the tokens back into a string
+    preprocessed_text = ' '.join(tokens)
+    return preprocessed_text
+
+# Apply the preprocessing function to the 'OriginalTweet' column
+df['PreprocessedTweet'] = df['OriginalTweet'].apply(preprocess_text)
+
+# Create a dictionary for probabilities
+vectorizer = TfidfVectorizer()  # Initialize a new TfidfVectorizer
+vectorizer.fit(df['PreprocessedTweet'])  # Assuming df is defined and has 'PreprocessedTweet' column
+X_test_tfidf = vectorizer.transform(df['OriginalTweet'][y_test.index])  # Transform original tweets using y_test index
+
+y_scores = {
+    'TF-IDF': classifier.predict_proba(X_test_tfidf),  # Use TF-IDF features for prediction
+    'Word2Vec': classifier_w2v.predict_proba(X_test),
+    'Pre-trained': y_pred_proba_pretrained
+}
+
+
+plot_roc_curves(y_test, y_scores)
+
+
+
